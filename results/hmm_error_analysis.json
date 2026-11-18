@@ -1,0 +1,10 @@
+{
+  "fixes": 19160,
+  "hmm_fixed": 1485,
+  "hmm_broke": 248,
+  "both_wrong": 765,
+  "candidate_miss": 35,
+  "wrong_direction_twin_clf": 1014,
+  "wrong_direction_twin_hmm": 317,
+  "hmm_err_adjacent_arc": 854
+}

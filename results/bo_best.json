@@ -1,0 +1,17 @@
+{
+  "model": "LambdaRank",
+  "best_value_cv3_top1": 0.8778062017631744,
+  "best_params": {
+    "n_estimators": 369,
+    "learning_rate": 0.03133679949748186,
+    "num_leaves": 218,
+    "min_child_samples": 68,
+    "subsample": 0.5461692674475913,
+    "colsample_bytree": 0.8493420646934844,
+    "reg_lambda": 0.013792687425410278,
+    "reg_alpha": 3.847077137079272,
+    "min_split_gain": 0.1737281688187418
+  },
+  "n_trials": 40,
+  "search_seconds": 580.1122798919678
+}

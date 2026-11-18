@@ -59,7 +59,7 @@ def model_plots():
 
     fig, ax = plt.subplots(figsize=(8, 4))
     data = [folds[folds.model == m].top1.to_numpy() for m in order]
-    ax.boxplot(data, vert=False, labels=order)
+    ax.boxplot(data, orientation="horizontal", tick_labels=order)
     ax.set_xlabel("Top-1 accuracy per CV fold"); ax.set_title("Stability across trip-grouped folds")
     save(fig, "models_cv_folds_box.png")
 
@@ -142,20 +142,22 @@ def hmm_plots():
     p = os.path.join(RES, "hmm_comparison.csv")
     if not os.path.exists(p):
         return
-    h = pd.read_csv(p).sort_values("hmm_acc")
+    h = pd.read_csv(p)
+    h = h[h.model != "LambdaRank_untuned"].sort_values("hmm_acc")
     y = np.arange(len(h))
     fig, ax = plt.subplots(1, 2, figsize=(12, 4.4))
     ax[0].barh(y - .2, h.clf_acc, .4, color=C3, label="classifier only")
     ax[0].barh(y + .2, h.hmm_acc, .4, color=C1, label="classifier + HMM")
     ax[0].set_yticks(y, h.model); ax[0].set_xlim(min(h.clf_acc.min(), h.hmm_acc.min()) - .03, 1)
-    ax[0].set_xlabel("student-test fix-level accuracy"); ax[0].legend(frameon=False, loc="lower right")
+    ax[0].set_xlabel("student-test fix-level accuracy"); ax[0].legend(frameon=True, loc="lower left")
     ax[1].barh(y - .2, h.clf_cont, .4, color=C3, label="classifier only")
     ax[1].barh(y + .2, h.hmm_cont, .4, color=C1, label="classifier + HMM")
-    ax[1].set_yticks(y, h.model); ax[1].set_xlabel("route continuity"); ax[1].legend(frameon=False, loc="lower right")
+    ax[1].set_yticks(y, h.model); ax[1].set_xlabel("route continuity"); ax[1].set_xlim(.6, 1.005)
+    ax[1].legend(frameon=True, loc="lower left")
     fig.suptitle("Effect of HMM/Viterbi decoding (same decoder parameters for every model)")
     save(fig, "hmm_effect.png")
     pt = pd.read_csv(os.path.join(RES, "hmm_per_trip.csv"))
-    final = [m for m in pt.model.unique() if m.endswith("_tuned")]
+    final = [json.load(open(os.path.join(ROOT, "models", "final", "config.json")))["results_key"]]
     if final:
         f = pt[pt.model == final[0]].sort_values("trip")
         x = np.arange(len(f))

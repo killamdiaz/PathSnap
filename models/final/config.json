@@ -1,0 +1,42 @@
+{
+  "model": "LambdaRank (LightGBM lambdarank, default params)",
+  "results_key": "LambdaRank_untuned",
+  "params": {
+    "n_estimators": 400,
+    "learning_rate": 0.05,
+    "num_leaves": 31,
+    "min_child_samples": 40,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "lambdarank_truncation_level": 3
+  },
+  "features": [
+    "d",
+    "d_rank",
+    "d_gap",
+    "d_rel",
+    "win_d",
+    "win_gap",
+    "head_cos",
+    "head_ok",
+    "wide_cos",
+    "speed",
+    "log_len",
+    "t_frac",
+    "overhang",
+    "n_cand",
+    "n_close",
+    "twin_in",
+    "deg",
+    "dt_prev",
+    "turn",
+    "end_room"
+  ],
+  "candidates": {
+    "k": 12,
+    "radius_m": 80.0
+  },
+  "seed": 352093,
+  "trained_on": "78 training trips (00000033, 00000054 excluded), unreliable fixes removed, every 3rd fix",
+  "selection_note": "Bayesian-tuned variant (model_bo_tuned.joblib, params in results/bo_best.json) matched CV top-1 within noise (+0.0006) but had worse CV log loss and student-test accuracy with and without HMM; the untuned model is deployed. See results/tuned_vs_untuned.csv and results/hmm_comparison.csv."
+}

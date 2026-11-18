@@ -57,7 +57,7 @@ def main():
                     md(pd.DataFrame(d["decoder"].items(), columns=["parameter", "value"])), "",
                     f"Decoder tuning: {json.dumps(d['tuning'])}", ""]
         pt = pd.read_csv(os.path.join(RES, "hmm_per_trip.csv"), dtype={"trip": str})
-        fin = [m for m in pt.model.unique() if m.endswith("_tuned")]
+        fin = [json.load(open(os.path.join(ROOT, "models", "final", "config.json")))["results_key"]]
         if fin:
             out += [f"## Per-trip results ({fin[0]})", md(pt[pt.model == fin[0]].drop(columns="model")), ""]
     with open(os.path.join(RES, "report_tables.md"), "w") as fh:

@@ -13,7 +13,7 @@ LEGEND = """{% macro html(this, kwargs) %}
  <span style="color:#1d4ed8">&#9679;</span> GPS fixes<br>
  <span style="color:#9aa5b1">&#9473;&#9473;</span> road network (near track)<br>
  <span style="color:#16a34a">&#9473;&#9473;</span> reference route<br>
- <span style="color:#f59e0b">&#9679;</span> classifier-only pick (wrong fixes)<br>
+ <span style="color:#f59e0b">&#9679;</span> classifier-only pick changed by HMM (off by default)<br>
  <span style="color:#dc2626">&#9473;&#9473;</span> PathSnap HMM route
 </div>{% endmacro %}"""
 
@@ -38,6 +38,12 @@ def trip_map(trip, tc, hmm_arcs, route, clf_arcs=None, ref_route=None, out=None,
     for a in near:
         folium.PolyLine(_arc_line(trip, a), color="#9aa5b1", weight=2, opacity=.55).add_to(g)
     g.add_to(m)
+    step = max(1, len(lat) // 1500)
+    g = folium.FeatureGroup(name="GPS fixes")
+    for i in range(0, len(lat), step):
+        folium.CircleMarker([lat[i], lon[i]], radius=1.6, color="#1d4ed8", weight=0, fill=True,
+                            fill_opacity=.55, tooltip=f"fix {i}, t={trip.track[i, 2]:.0f}s, arc {hmm_arcs[i]}").add_to(g)
+    g.add_to(m)
     if ref_route is not None:
         g = folium.FeatureGroup(name="Reference route")
         for a in ref_route:
@@ -46,12 +52,6 @@ def trip_map(trip, tc, hmm_arcs, route, clf_arcs=None, ref_route=None, out=None,
     g = folium.FeatureGroup(name="PathSnap HMM route")
     for a in route:
         folium.PolyLine(_arc_line(trip, a), color="#dc2626", weight=3.5, opacity=.95).add_to(g)
-    g.add_to(m)
-    step = max(1, len(lat) // 1500)
-    g = folium.FeatureGroup(name="GPS fixes")
-    for i in range(0, len(lat), step):
-        folium.CircleMarker([lat[i], lon[i]], radius=2.2, color="#1d4ed8", weight=0, fill=True,
-                            fill_opacity=.8, tooltip=f"fix {i}, t={trip.track[i, 2]:.0f}s, arc {hmm_arcs[i]}").add_to(g)
     g.add_to(m)
     if clf_arcs is not None:
         diff = np.flatnonzero(clf_arcs != hmm_arcs)

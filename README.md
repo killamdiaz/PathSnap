@@ -13,6 +13,15 @@ continuous route. A FastAPI service runs the pipeline (Laptop 1), and a browser 
              route + metrics ◄── shortest-path bridging ◄── Viterbi (HMM) ◄── P(arc | fix) model
 ```
 
+## Results (student-test, 10 trips, 19,160 GPS fixes)
+
+| | fix accuracy | route continuity | route F1 | route mismatch (RMF) |
+|---|---|---|---|---|
+| LambdaRank classifier only | 0.8826 | 0.930 | 0.820 | 0.487 |
+| **LambdaRank + HMM/Viterbi (deployed)** | **0.9471** | **0.998** | **0.987** | **0.027** |
+
+10 models compared (`results/model_comparison.csv`). Details are in `docs/REPORT_NOTES.md` and `results/report_tables.md`.
+
 ## Repository layout
 
 | Folder | Contents |
@@ -23,6 +32,8 @@ continuous route. A FastAPI service runs the pipeline (Laptop 1), and a browser 
 | `ui/` | evaluator UI (`index.html`, `serve.py`) |
 | `models/final/` | deployed artifact: `model.joblib`, `config.json`, `decoder.json` |
 | `models/zoo/` | the other trained models that are small enough to commit |
+| `docs/` | `REPORT_NOTES.md`: facts and numbers per report section |
+| `tests/` | unit tests, incl. one proving inference runs without any `.route` file |
 | `results/` | every CSV/JSON the experiments wrote (model comparison, CV folds, Optuna trials and study DB, HMM comparison, EDA inventory, data-quality notes) |
 | `figures/` | every plot, all generated from `results/` |
 | `maps/` | interactive Folium maps (EDA + every student-test trip) |
@@ -54,7 +65,11 @@ python scripts/build_dataset.py    # candidates, features, reference labels  -> 
 python scripts/train_models.py     # 10 models, 5-fold GroupKFold + student-test -> results/model_comparison.csv
 python scripts/bayes_opt.py        # Optuna TPE on the selected model -> models/final/model.joblib
 python scripts/hmm_eval.py         # decoder tuning on OOF train probs + classifier vs HMM -> models/final/decoder.json
+python scripts/make_maps.py        # deployed pipeline on student-test -> maps/st_*.html + results/deployed_student_test.csv
+python scripts/hmm_error_analysis.py  # where HMM helps/hurts -> results/hmm_error_analysis.json
 python scripts/plots.py            # all figures in figures/
+python scripts/report_tables.py    # results/report_tables.md
+pytest -q tests                    # unit tests
 ```
 
 Seeds are fixed (`pathsnap.models.SEED`). The evaluator-test partition is never read by any of these scripts.
@@ -73,8 +88,8 @@ Find its IP with `ipconfig getifaddr en0` (macOS), `hostname -I` (Linux) or `ipc
 Each request is logged in this terminal, for example:
 
 ```
-10:42:07  INFO  POST /predict trip=00000065 received
-10:42:10  INFO  POST /predict trip=00000065 fixes=768 | HMM acc 0.9a | route F1 0.9b | continuity ... | 2.91s
+11:14:43  INFO  POST /predict trip=00000077 received
+11:14:46  INFO  POST /predict trip=00000077 fixes=3911 | HMM acc 0.8941 (classifier-only 0.7499) | route F1 0.9943 | continuity 0.949 -> 1.000 | 2.21s
 ```
 
 If `PATHSNAP_EVAL_DIR` is not set and `data/evaluator_test` does not exist, the API serves `data/student_test`.
