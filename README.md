@@ -1,6 +1,13 @@
 # PathSnap — GPS map-matching with a learned candidate scorer + HMM/Viterbi
 
-UE24CS352A Machine Learning hackathon. Team: _<names / SRNs>_
+UE24CS352A Machine Learning hackathon.
+
+| Team member | SRN |
+|---|---|
+| Zaid Mallik | PES2UG24AM093 |
+| Prarthana | PES2UG24AM119 |
+| Nidhi | PES2UG24AM103 |
+| Sanjay | PES2UG24AM151 |
 
 PathSnap snaps noisy GPS fixes onto a directed road network. For every fix we collect candidate road
 arcs, score each (fix, arc) pair with a trained model, then decode the most plausible drivable
@@ -20,7 +27,7 @@ continuous route. A FastAPI service runs the pipeline (Laptop 1), and a browser 
 | LambdaRank classifier only | 0.8826 | 0.930 | 0.820 | 0.487 |
 | **LambdaRank + HMM/Viterbi (deployed)** | **0.9471** | **0.998** | **0.987** | **0.027** |
 
-10 models compared (`results/model_comparison.csv`). Details are in `docs/REPORT_NOTES.md` and `results/report_tables.md`.
+10 models compared (`results/model_comparison.csv`). All report tables are generated into `results/report_tables.md`.
 
 ## Repository layout
 
@@ -32,7 +39,6 @@ continuous route. A FastAPI service runs the pipeline (Laptop 1), and a browser 
 | `ui/` | evaluator UI (`index.html`, `serve.py`) |
 | `models/final/` | deployed artifact: `model.joblib`, `config.json`, `decoder.json` |
 | `models/zoo/` | the other trained models that are small enough to commit |
-| `docs/` | `REPORT_NOTES.md`: facts and numbers per report section |
 | `tests/` | unit tests, incl. one proving inference runs without any `.route` file |
 | `results/` | every CSV/JSON the experiments wrote (model comparison, CV folds, Optuna trials and study DB, HMM comparison, EDA inventory, data-quality notes) |
 | `figures/` | every plot, all generated from `results/` |
@@ -103,12 +109,14 @@ python ui/serve.py            # http://localhost:5500
 Open `http://localhost:5500/?api=http://<laptop1-ip>:8000`. The page lists the trips the API serves.
 Clicking one sends `POST /predict {"trip_id": ...}` and draws the GPS fixes and the predicted route,
 with the accuracy that the API computed server-side.
+A Models panel lists the 10 models compared during development (from `GET /models`) and the deployed pipeline.
 
 API quick test from any machine:
 
 ```bash
 curl http://<laptop1-ip>:8000/health
 curl http://<laptop1-ip>:8000/trips
+curl http://<laptop1-ip>:8000/models      # models compared in development + the deployed pipeline
 curl -X POST http://<laptop1-ip>:8000/predict -H 'Content-Type: application/json' -d '{"trip_id":"00000065"}'
 ```
 
@@ -126,4 +134,5 @@ through Windows Defender Firewall).
 
 ## AI-assistance disclosure
 
-_<state here, as required by the course policy, how AI tools were used>_
+An AI coding assistant (Claude Code) was used while building this project, to help write and debug code and documentation.
+All results in this repository were produced by running the scripts listed above, and every number in the report can be regenerated from the files in `results/`.

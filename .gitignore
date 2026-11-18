@@ -7,3 +7,7 @@ results/dataset/
 results/st_probs/
 results/oof_train_probs.parquet
 logs/
+
+# local study material (not part of the submission)
+docs/REPORT_NOTES.md
+docs/explainer/
