@@ -1,0 +1,1 @@
+# Laptop 2 needs only a browser and Python's standard library (ui/serve.py). Nothing to install.

@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+data/
+results/dataset/
+results/st_probs/
+results/oof_train_probs.parquet
+logs/
