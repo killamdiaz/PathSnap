@@ -45,6 +45,17 @@
   .sw { display:inline-block; width:18px; height:4px; vertical-align:middle; margin-right:6px; border-radius:2px; }
   .spin { display:inline-block; width:12px; height:12px; border:2px solid var(--mute); border-top-color:transparent; border-radius:50%; animation:r 1s linear infinite; vertical-align:-2px; margin-right:6px; }
   @keyframes r { to { transform: rotate(360deg); } }
+  details.models { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin-bottom:16px; }
+  details.models summary { cursor:pointer; font-size:12px; color:var(--mute); text-transform:uppercase; letter-spacing:.5px; }
+  details.models summary b { color:var(--ink); text-transform:none; letter-spacing:0; font-size:13px; }
+  .pipe { font-size:12px; color:var(--mute); margin:8px 0 4px; line-height:1.6; }
+  .pipe b { color:var(--ink); }
+  table.mt { margin-top:6px; }
+  table.mt th { font-size:10px; color:var(--mute); text-align:right; font-weight:500; padding:3px 0 3px 6px; border-bottom:1px solid var(--line); }
+  table.mt th:first-child, table.mt td:first-child { text-align:left; padding-left:0; }
+  table.mt td { text-align:right; padding:3px 0 3px 6px; color:var(--ink); font-variant-numeric: tabular-nums; }
+  table.mt td small { color:var(--mute); display:block; font-size:10px; }
+  table.mt tr.dep td { color:var(--good); font-weight:600; }
   @media (max-width: 800px) { body { grid-template-columns: 1fr; height:auto; } #map { height:60vh; } }
 </style>
 </head>
@@ -56,6 +67,7 @@
   <div class="row"><input id="api" placeholder="http://192.168.x.x:8000"><button id="connect">Connect</button></div>
   <div id="status" class="status"></div>
   <div id="trips" class="trips"></div>
+  <details class="models" id="modelsBox" open hidden><summary>Models · <b id="modelsHead"></b></summary><div id="models"></div></details>
   <div id="results"></div>
 </aside>
 <div id="map"></div>
@@ -94,10 +106,31 @@ async function connect() {
       b.dataset.trip = tr.trip_id;
       $('#trips').appendChild(b);
     });
+    loadModels(h);
     const auto = qs.get('trip');
     const ab = auto && document.querySelector(`.trip[data-trip="${auto}"]`);
     if (ab) run(auto, ab);
   } catch (e) { status('cannot reach API at ' + api + ' (' + e.message + ')', true); }
+}
+
+async function loadModels(h) {
+  const f = v => v == null ? '–' : (100 * v).toFixed(1);
+  $('#modelsBox').hidden = false;
+  $('#modelsHead').textContent = h.model;
+  let m;
+  try { const r = await fetch(api + '/models'); if (!r.ok) throw new Error(r.status); m = await r.json(); }
+  catch (e) { $('#models').innerHTML = `<div class="pipe">Deployed: <b>${h.model}</b> + HMM/Viterbi. (Restart the API to list all compared models.)</div>`; return; }
+  const dec = m.deployed.decoder;
+  let html = `<div class="pipe">Pipeline: 12 candidate arcs ≤ 80 m → 20 features → <b>${m.deployed.name}</b> scores → <b>HMM / Viterbi</b> decoding
+    (α ${dec.alpha.toFixed(2)}, β₀ ${dec.beta0.toFixed(2)} m, U-turn penalty ${dec.uturn.toFixed(1)}, gap break ${dec.gap_s.toFixed(0)} s).<br>
+    Chosen by 5-fold GroupKFold CV top-1 on training trips. Scores below are from development data, not these evaluator trips.</div>`;
+  html += '<table class="mt"><tr><th>Model</th><th>CV top-1</th><th>Test top-1</th><th>+ HMM</th></tr>';
+  m.compared.forEach(r => {
+    html += `<tr class="${r.model === m.deployed.name ? 'dep' : ''}"><td>${r.model === m.deployed.name ? '● ' : ''}${r.model}<small>${r.family}</small></td>
+      <td>${f(r.cv_top1)}%</td><td>${f(r.st_top1)}%</td><td>${f(r.st_hmm_top1)}%</td></tr>`;
+  });
+  html += '</table><div class="pipe">Test = student-test partition (10 trips, 19,160 fixes).</div>';
+  $('#models').innerHTML = html;
 }
 
 async function run(id, btn) {

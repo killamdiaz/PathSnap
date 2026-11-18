@@ -4,6 +4,7 @@ Run:  PATHSNAP_EVAL_DIR=/path/to/evaluator_test  uvicorn api.main:app --host 0.0
 
 Endpoints
   GET  /health            model + decoder loaded, which trip folder is being served
+  GET  /models            the models compared in development (CV + student-test scores) and the deployed one
   GET  /trips             the evaluation trips available (ids + size only; no reference data)
   POST /predict {trip_id} full pipeline on that trip; returns GPS, predicted route geometry and the
                           accuracy computed server-side against the trip's .route file
@@ -13,6 +14,7 @@ only scalar metrics leave the server.
 """
 from __future__ import annotations
 
+import csv
 import json
 import logging
 import os
@@ -91,6 +93,34 @@ def server_side_evaluation(trip_id: str, out: dict) -> dict:
 def health():
     return {"status": "ok", "model": CFG["model"], "decoder": DEC.as_dict(), "trips_dir": EVAL_DIR,
             "n_trips": len(_available())}
+
+
+def _read_csv(name: str) -> list[dict]:
+    p = os.path.join(ROOT, "results", name)
+    if not os.path.isfile(p):
+        return []
+    with open(p, newline="") as fh:
+        return list(csv.DictReader(fh))
+
+
+@app.get("/models")
+def models():
+    """The models compared during development (training/CV + student-test results from results/),
+    and the deployed pipeline. Nothing here is computed from the evaluator trips."""
+    hmm = {r["model"]: r for r in _read_csv("hmm_comparison.csv")}
+    rows = []
+    for r in _read_csv("model_comparison.csv"):
+        f = lambda k, src=r: round(float(src[k]), 4) if src.get(k) not in (None, "") else None  # noqa: E731
+        h = hmm.get(r["model"], {})
+        rows.append({"model": r["model"], "family": r["family"], "config": r["config"],
+                     "cv_top1": f("cv_top1"), "cv_macro_f1": f("cv_macro_f1"), "cv_log_loss": f("cv_log_loss"),
+                     "st_top1": f("st_top1"), "st_hmm_top1": f("hmm_acc", h) if h else None,
+                     "infer_ms_per_fix": f("infer_ms_per_fix")})
+    rows.sort(key=lambda r: -(r["cv_top1"] or 0))
+    deployed = CFG.get("results_key", "LambdaRank").replace("_untuned", "")
+    return {"deployed": {"model": CFG["model"], "name": deployed, "decoder": DEC.as_dict(),
+                         "selection": CFG.get("selection_note", "highest mean 5-fold GroupKFold top-1 accuracy")},
+            "compared": rows}
 
 
 @app.get("/trips")
